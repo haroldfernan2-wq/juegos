@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aventura Mágica de Aprendizaje</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Fredoka (muy redondeada e infantil) -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Fredoka', sans-serif;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            overflow-x: hidden;
+            background: linear-gradient(180deg, #7DD3FC 0%, #BAE6FD 55%, #86EFAC 55%, #4ADE80 100%);
+            min-height: 100vh;
+        }
+
+        /* Estilo de botones caricaturescos en 3D */
+        .btn-cartoon {
+            transition: all 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 8px 0 rgba(0, 0, 0, 0.18), 0 12px 20px rgba(0, 0, 0, 0.15);
+            border: 4px solid #FFFFFF;
+        }
+        .btn-cartoon:hover {
+            transform: translateY(-4px) scale(1.02);
+        }
+        .btn-cartoon:active {
+            transform: translateY(5px) scale(0.97);
+            box-shadow: 0 2px 0 rgba(0, 0, 0, 0.2), 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Animaciones divertidas */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-10px) rotate(2deg); }
+        }
+        .animate-float {
+            animation: float 3.5s ease-in-out infinite;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.3); opacity: 0; }
+            70% { transform: scale(1.08); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-pop {
+            animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        @keyframes wiggle {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-10deg) scale(1.1); }
+            75% { transform: rotate(10deg) scale(1.1); }
+        }
+        .animate-wiggle {
+            animation: wiggle 0.5s ease-in-out;
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { transform: scale(1); filter: brightness(1); }
+            50% { transform: scale(1.12); filter: brightness(1.25); }
+        }
+        .simon-lit {
+            animation: pulseGlow 0.55s ease-in-out;
+            border-color: #FDE047 !important;
+            box-shadow: 0 0 30px #FDE047 !important;
+        }
+
+        /* Nubes decorativas de fondo */
+        .cloud {
+            position: fixed;
+            background: rgba(255, 255, 255, 0.85);
+            border-radius: 999px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Canvas de confeti */
+        #confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body class="flex flex-col justify-between relative">
+
+    <!-- Nubes decorativas -->
+    <div class="cloud w-36 h-12 top-16 left-6 opacity-80 animate-float" style="animation-delay: 0s;"></div>
+    <div class="cloud w-48 h-14 top-28 right-8 opacity-75 animate-float" style="animation-delay: 1.2s;"></div>
+    <div class="cloud w-32 h-10 top-48 left-1/3 opacity-60 animate-float" style="animation-delay: 2.1s;"></div>
+
+    <!-- Canvas para celebración con confeti -->
+    <canvas id="confetti-canvas"></canvas>
+
+    <!-- BARRA SUPERIOR DE CONTROLES Y RECOMPENSAS -->
+    <header class="relative z-20 w-full max-w-5xl mx-auto p-3 sm:p-4 flex flex-wrap items-center justify-between gap-2">
+        <!-- Botón de Inicio / Volver al Menú -->
+        <button id="btn-home" onclick="goHome()" class="hidden btn-cartoon bg-amber-400 hover:bg-amber-300 text-amber-950 px-4 py-2 sm:px-5 sm:py-3 rounded-3xl font-bold text-lg sm:text-xl flex items-center gap-2">
+            <span class="text-2xl sm:text-3xl">🏠</span>
+            <span class="hidden sm:inline">Inicio</span>
+        </button>
+
+        <!-- Título corto en Home -->
+        <div id="home-badge" class="flex items-center gap-2 bg-white/90 px-4 py-2 rounded-3xl border-4 border-yellow-300 shadow-md">
+            <span class="text-2xl sm:text-3xl">🌈</span>
+            <span class="font-bold text-sky-700 text-base sm:text-xl">Aventura Mágica</span>
+        </div>
+
+        <!-- Controles centrales y derechos -->
+        <div class="flex items-center gap-2 sm:gap-3 ml-auto">
+            <!-- Repetir instrucción por voz -->
+            <button id="btn-repeat" onclick="repeatInstruction()" title="Escuchar de nuevo" class="btn-cartoon bg-sky-500 hover:bg-sky-400 text-white p-2.5 sm:px-4 sm:py-3 rounded-3xl font-bold flex items-center gap-2">
+                <span class="text-2xl sm:text-3xl">🗣️</span>
+                <span class="hidden md:inline text-lg">Repetir</span>
+            </button>
+
+            <!-- Botón de Silencio / Sonido -->
+            <button id="btn-mute" onclick="toggleMute()" title="Sonido" class="btn-cartoon bg-purple-500 hover:bg-purple-400 text-white p-2.5 sm:p-3 rounded-3xl font-bold text-2xl sm:text-3xl">
+                🔊
+            </button>
+
+            <!-- Contador de Estrellas y Cofre de Stickers -->
+            <button onclick="openStickerChest()" class="btn-cartoon bg-gradient-to-r from-yellow-300 to-amber-400 text-amber-950 px-3 py-2 sm:px-5 sm:py-2.5 rounded-3xl font-bold flex items-center gap-2 sm:gap-3">
+                <div class="flex items-center gap-1">
+                    <span class="text-2xl sm:text-3xl animate-pulse">⭐</span>
+                    <span id="star-count" class="text-xl sm:text-2xl font-extrabold">0</span>
+                </div>
+                <div class="h-6 w-1 bg-amber-600/30 rounded-full"></div>
+                <div class="flex items-center gap-1">
+                    <span class="text-2xl sm:text-3xl">🎁</span>
+                    <span id="sticker-badge" class="bg-red-500 text-white text-xs sm:text-sm px-2 py-0.5 rounded-full font-bold">0/6</span>
+                </div>
+            </button>
+        </div>
+    </header>
+
+    <!-- CONTENEDOR PRINCIPAL -->
+    <main class="relative z-10 flex-grow flex flex-col items-center justify-center w-full max-w-5xl mx-auto px-4 py-2 sm:py-4">
+
+        <!-- ==================== 1. MENÚ PRINCIPAL ==================== -->
+        <section id="screen-home" class="w-full flex flex-col items-center text-center animate-pop">
+            <div class="bg-white/95 backdrop-blur-sm px-6 py-4 sm:px-10 sm:py-6 rounded-[2.5rem] border-4 border-yellow-400 shadow-xl mb-6 sm:mb-8 max-w-2xl">
+                <h1 class="text-3xl sm:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 drop-shadow-sm">
+                    ✨ Aventura Mágica ✨
+                </h1>
+                <p class="text-sky-700 text-lg sm:text-2xl font-semibold mt-1">
+                    ¡Toca un juego para empezar!
+                </p>
+            </div>
+
+            <!-- 4 Tarjetas grandes de Juegos -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6 w-full max-w-4xl">
+                
+                <!-- Tarjeta 1: Letras y Palabras -->
+                <button onclick="startGame('letters')" onmouseenter="hoverSpeak('Letras y Palabras')" class="btn-cartoon bg-gradient-to-br from-rose-400 to-red-500 text-white p-6 sm:p-8 rounded-[2.5rem] flex flex-col items-center justify-center gap-3 group">
+                    <div class="bg-white/25 w-24 h-24 sm:w-28 sm:h-28 rounded-full flex items-center justify-center text-6xl sm:text-7xl shadow-inner group-hover:scale-110 transition-transform">
+                        🔤
+                    </div>
+                    <h2 class="text-2xl sm:text-3xl font-extrabold tracking-wide drop-shadow">Letras y Palabras</h2>
+                    <div class="flex gap-2 text-2xl sm:text-3xl">
+                        <span>🍎</span><span>🐘</span><span>🐶</span>
+                    </div>
+                </button>
+
+                <!-- Tarjeta 2: Números y Conteo -->
+                <button onclick="startGame('numbers')" onmouseenter="hoverSpeak('Números y Conteo')" class="btn-cartoon bg-gradient-to-br from-amber-400 to-orange-500 text-white p-6 sm:p-8 rounded-[2.5rem] flex flex-col items-center justify-center gap-3 group">
+                    <div class="bg-white/25 w-24 h-24 sm:w-28 sm:h-28 rounded-full flex items-center justify-center text-6xl sm:text-7xl shadow-inner group-hover:scale-110 transition-transform">
+                        🔢
+                    </div>
+                    <h2 class="text-2xl sm:text-3xl font-extrabold tracking-wide drop-shadow">Números y Conteo</h2>
+                    <div class="flex gap-2 text-2xl sm:text-3xl">
+                        <span>1️⃣</span><span>2️⃣</span><span>3️⃣</span>
+                    </div>
+                </button>
+
+                <!-- Tarjeta 3: Colores y Formas -->
+                <button onclick="startGame('shapes')" onmouseenter="hoverSpeak('Colores y Formas')" class="btn-cartoon bg-gradient-to-br from-emerald-400 to-teal-600 text-white p-6 sm:p-8 rounded-[2.5rem] flex flex-col items-center justify-center gap-3 group">
+                    <div class="bg-white/25 w-24 h-24 sm:w-28 sm:h-28 rounded-full flex items-center justify-center text-6xl sm:text-7xl shadow-inner group-hover:scale-110 transition-transform">
+                        🎨
+                    </div>
+                    <h2 class="text-2xl sm:text-3xl font-extrabold tracking-wide drop-shadow">Colores y Formas</h2>
+                    <div class="flex gap-2 text-2xl sm:text-3xl">
+                        <span>🔴</span><span>⭐</span><span>🟦</span>
+                    </div>
+                </button>
+
+                <!-- Tarjeta 4: Memoria Musical -->
+                <button onclick="startGame('memory')" onmouseenter="hoverSpeak('Memoria Musical de Animales')" class="btn-cartoon bg-gradient-to-br from-violet-500 to-indigo-600 text-white p-6 sm:p-8 rounded-[2.5rem] flex flex-col items-center justify-center gap-3 group">
+                    <div class="bg-white/25 w-24 h-24 sm:w-28 sm:h-28 rounded-full flex items-center justify-center text-6xl sm:text-7xl shadow-inner group-hover:scale-110 transition-transform">
+                        🎵
+                    </div>
+                    <h2 class="text-2xl sm:text-3xl font-extrabold tracking-wide drop-shadow">Memoria Musical</h2>
+                    <div class="flex gap-2 text-2xl sm:text-3xl">
+                        <span>🐮</span><span>🦁</span><span>🐸</span>
+                    </div>
+                </button>
+
+            </div>
+        </section>
+
+        <!-- ==================== 2. JUEGO: LETRAS Y PALABRAS ==================== -->
+        <section id="screen-letters" class="hidden w-full max-w-3xl flex flex-col items-center text-center">
+            <!-- Cartel de instrucción -->
+            <div class="bg-white/95 px-6 py-4 rounded-[2rem] border-4 border-rose-400 shadow-lg mb-6 w-full flex items-center justify-center gap-3">
+                <span class="text-4xl">🦉</span>
+                <p id="letters-prompt" class="text-2xl sm:text-3xl font-bold text-rose-600">¡Toca la letra!</p>
+            </div>
+
+            <!-- Tarjeta principal de muestra (Letra + Dibujo) -->
+            <button id="letter-showcase" onclick="pronounceCurrentLetter()" class="btn-cartoon bg-white p-6 sm:p-8 rounded-[2.5rem] border-rose-300 mb-8 flex items-center justify-center gap-6 sm:gap-10 w-full max-w-md cursor-pointer">
+                <span id="showcase-char" class="text-7xl sm:text-9xl font-extrabold text-rose-500">A</span>
+                <div class="flex flex-col items-center">
+                    <span id="showcase-emoji" class="text-7xl sm:text-8xl">🍎</span>
+                    <span id="showcase-word" class="text-2xl sm:text-3xl font-bold text-gray-700 mt-2">Árbol</span>
+                </div>
+            </button>
+
+            <!-- 3 Opciones de letras gigantes -->
+            <div id="letters-options" class="grid grid-cols-3 gap-4 sm:gap-6 w-full max-w-xl">
+                <!-- Se generan dinámicamente -->
+            </div>
+        </section>
+
+        <!-- ==================== 3. JUEGO: NÚMEROS Y CONTEO ==================== -->
+        <section id="screen-numbers" class="hidden w-full max-w-4xl flex flex-col items-center text-center">
+            <div class="bg-white/95 px-6 py-4 rounded-[2rem] border-4 border-orange-400 shadow-lg mb-5 w-full flex items-center justify-center gap-3">
+                <span class="text-4xl">🐵</span>
+                <p id="numbers-prompt" class="text-2xl sm:text-3xl font-bold text-orange-600">¡Toca para contar!</p>
+            </div>
+
+            <!-- Área de objetos para tocar y contar -->
+            <div id="counting-area" class="bg-white/85 backdrop-blur-sm p-5 sm:p-8 rounded-[2.5rem] border-4 border-amber-300 shadow-inner min-h-[200px] sm:min-h-[240px] w-full flex flex-wrap items-center justify-center gap-4 sm:gap-6 mb-6">
+                <!-- Ítems generados dinámicamente -->
+            </div>
+
+            <!-- Opciones de respuesta numérica -->
+            <div id="numbers-options" class="grid grid-cols-3 gap-4 sm:gap-6 w-full max-w-xl">
+                <!-- Botones numéricos dinámicos -->
+            </div>
+        </section>
+
+        <!-- ==================== 4. JUEGO: COLORES Y FORMAS ==================== -->
+        <section id="screen-shapes" class="hidden w-full max-w-4xl flex flex-col items-center text-center">
+            <div class="bg-white/95 px-6 py-4 rounded-[2rem] border-4 border-emerald-400 shadow-lg mb-6 w-full flex items-center justify-center gap-3">
+                <span class="text-4xl">🐸</span>
+                <p id="shapes-prompt" class="text-2xl sm:text-3xl font-bold text-emerald-700">¡Busca la figura!</p>
+            </div>
+
+            <!-- Cuadrícula de figuras SVG divertidas con caritas -->
+            <div id="shapes-grid" class="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 w-full max-w-3xl">
+                <!-- Figuras generadas dinámicamente -->
+            </div>
+        </section>
+
+        <!-- ==================== 5. JUEGO: MEMORIA MUSICAL ==================== -->
+        <section id="screen-memory" class="hidden w-full max-w-3xl flex flex-col items-center text-center">
+            <div class="bg-white/95 px-6 py-4 rounded-[2rem] border-4 border-violet-400 shadow-lg mb-6 w-full flex items-center justify-center gap-3">
+                <span class="text-4xl">🦊</span>
+                <p id="memory-prompt" class="text-2xl sm:text-3xl font-bold text-violet-700">¡Escucha y repite!</p>
+            </div>
+
+            <!-- 4 Botones grandes de animales musicales -->
+            <div id="simon-grid" class="grid grid-cols-2 gap-5 sm:gap-6 w-full max-w-lg">
+                <button id="simon-0" onclick="handleSimonPress(0)" class="btn-cartoon bg-rose-400 p-6 sm:p-8 rounded-[2.5rem] flex flex-col items-center justify-center gap-2">
+                    <span class="text-7xl sm:text-8xl">🐮</span>
+                    <span class="text-white font-bold text-xl sm:text-2xl">Vaca</span>
+                </button>
+                <button id="simon-1" onclick="handleSimonPress(1)" class="btn-cartoon bg-amber-400 p-6 sm:p-8 rounded-[2.5rem] flex flex-col items-center justify-center gap-2">
+                    <span class="text-7xl sm:text-8xl">🐶</span>
+                    <span class="text-white font-bold text-xl sm:text-2xl">Perro</span>
+                </button>
+                <button id="simon-2" onclick="handleSimonPress(2)" class="btn-cartoon bg-emerald-400 p-6 sm:p-8 rounded-[2.5rem] flex flex-col items-center justify-center gap-2">
+                    <span class="text-7xl sm:text-8xl">🐸</span>
+                    <span class="text-white font-bold text-xl sm:text-2xl">Rana</span>
+                </button>
+                <button id="simon-3" onclick="handleSimonPress(3)" class="btn-cartoon bg-sky-400 p-6 sm:p-8 rounded-[2.5rem] flex flex-col items-center justify-center gap-2">
+                    <span class="text-7xl sm:text-8xl">🦁</span>
+                    <span class="text-white font-bold text-xl sm:text-2xl">León</span>
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- MODAL: COFRE DE STICKERS Y MEDALLAS -->
+    <div id="modal-stickers" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-gradient-to-b from-yellow-100 to-white w-full max-w-xl rounded-[2.5rem] border-8 border-amber-400 p-6 sm:p-8 text-center shadow-2xl animate-pop relative">
+            <button onclick="closeStickerChest()" class="btn-cartoon bg-rose-500 text-white w-12 h-12 rounded-full font-extrabold text-2xl absolute -top-5 -right-5 flex items-center justify-center">
+                ✕
+            </button>
+
+            <h2 class="text-3xl sm:text-4xl font-extrabold text-amber-600 mb-2">🎁 Cofre de Stickers 🎁</h2>
+            <p class="text-gray-600 text-lg sm:text-xl font-semibold mb-6">
+                ¡Gana 3 estrellas para desbloquear cada sorpresa!
+            </p>
+
+            <div id="stickers-grid" class="grid grid-cols-3 gap-4 sm:gap-5 mb-6">
+                <!-- Stickers renderizados dinámicamente -->
+            </div>
+
+            <button onclick="closeStickerChest()" class="btn-cartoon bg-emerald-500 hover:bg-emerald-400 text-white px-8 py-3 rounded-3xl font-bold text-2xl">
+                ¡Seguir Jugando! 🚀
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL DE NUEVO STICKER DESBLOQUEADO -->
+    <div id="modal-unlock" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-gradient-to-b from-purple-200 via-pink-100 to-yellow-100 w-full max-w-md rounded-[2.5rem] border-8 border-yellow-400 p-8 text-center shadow-2xl animate-pop">
+            <h2 class="text-3xl sm:text-4xl font-extrabold text-purple-700 mb-2">🎉 ¡NUEVO STICKER! 🎉</h2>
+            <div id="unlocked-emoji" class="text-9xl my-6 animate-bounce">🦖</div>
+            <p id="unlocked-name" class="text-2xl sm:text-3xl font-bold text-pink-600 mb-6">¡Dinosaurio Mágico!</p>
+            <button onclick="closeUnlockModal()" class="btn-cartoon bg-amber-400 text-amber-950 px-8 py-4 rounded-3xl font-extrabold text-2xl w-full">
+                ¡Genial! ⭐
+            </button>
+        </div>
+    </div>
+
+    <!-- PIE DE PÁGINA SUAVE -->
+    <footer class="relative z-10 text-center py-2 text-emerald-950/70 font-semibold text-sm">
+        🌟 Aprende jugando con alegría 🌟
+    </footer>
+
+    <script>
+        /* ==========================================================================
+           1. ESTADO GLOBAL Y CONFIGURACIÓN
+           ========================================================================== */
+        const state = {
+            stars: 0,
+            isMuted: false,
+            currentScreen: 'home',
+            currentInstruction: '¡Bienvenido a Aventura Mágica de Aprendizaje! Elige un juego.',
+            unlockedStickers: [],
+            isTransitioning: false,
+            pendingNextRound: null,
+            // Datos específicos de cada juego
+            letterTarget: null,
+            numberTarget: 0,
+            countedSet: new Set(),
+            shapeTarget: null,
+            simonSequence: [],
+            simonUserStep: 0,
+            simonIsPlaying: false,
+            simonLevel: 1
+        };
+
+        const STICKERS = [
+            { id: 1, emoji: '🦖', name: 'Dinosaurio Feliz', starsNeeded: 3 },
+            { id: 2, emoji: '🚀', name: 'Cohete Espacial', starsNeeded: 6 },
+            { id: 3, emoji: '🦄', name: 'Unicornio Mágico', starsNeeded: 9 },
+            { id: 4, emoji: '👑', name: 'Corona Real', starsNeeded: 12 },
+            { id: 5, emoji: '🌈', name: 'Arcoíris Brillante', starsNeeded: 15 },
+            { id: 6, emoji: '🏆', name: 'Súper Campeón', starsNeeded: 18 }
+        ];
+
+        const ALPHABET_DATA = [
+            { char: 'A', word: 'Árbol', emoji: '🌳', sound: 'a' },
+            { char: 'E', word: 'Elefante', emoji: '🐘', sound: 'e' },
+            { char: 'I', word: 'Iglú', emoji: '🧊', sound: 'i' },
+            { char: 'O', word: 'Oso', emoji: '🐻', sound: 'o' },
+            { char: 'U', word: 'Uvas', emoji: '🍇', sound: 'u' },
+            { char: 'M', word: 'Manzana', emoji: '🍎', sound: 'eme' },
+            { char: 'P', word: 'Perro', emoji: '🐶', sound: 'pe' },
+            { char: 'S', word: 'Sol', emoji: '☀️', sound: 'ese' },
+            { char: 'L', word: 'León', emoji: '🦁', sound: 'ele' },
+            { char: 'G', word: 'Gato', emoji: '🐱', sound: 'ge' }
+        ];
+
+        const COUNTING_ITEMS = [
+            { emoji: '🍎', singular: 'manzana', plural: 'manzanas' },
+            { emoji: '🐸', singular: 'ranita', plural: 'ranitas' },
+            { emoji: '⭐', singular: 'estrella', plural: 'estrellas' },
+            { emoji: '🦆', singular: 'patito', plural: 'patitos' },
+            { emoji: '🍓', singular: 'fresa', plural: 'fresas' },
+            { emoji: '🐢', singular: 'tortuga', plural: 'tortugas' }
+        ];
+
+        const SHAPES_DATA = [
+            { id: 'circle', name: 'el círculo', svgType: 'circle' },
+            { id: 'square', name: 'el cuadrado', svgType: 'square' },
+            { id: 'triangle', name: 'el triángulo', svgType: 'triangle' },
+            { id: 'star', name: 'la estrella', svgType: 'star' }
+        ];
+
+        const COLORS_DATA = [
+            { id: 'red', name: 'rojo', hex: '#EF4444' },
+            { id: 'blue', name: 'azul', hex: '#3B82F6' },
+            { id: 'yellow', name: 'amarillo', hex: '#FACC15' },
+            { id: 'green', name: 'verde', hex: '#22C55E' },
+            { id: 'purple', name: 'morado', hex: '#A855F7' },
+            { id: 'orange', name: 'naranja', hex: '#F97316' }
+        ];
+
+        const SIMON_ANIMALS = [
+            { name: 'Vaca', soundText: 'Muuu', freq: 261.63 },   // Do
+            { name: 'Perro', soundText: 'Guau', freq: 329.63 },  // Mi
+            { name: 'Rana', soundText: 'Croac', freq: 392.00 },  // Sol
+            { name: 'León', soundText: 'Roar', freq: 523.25 }    // Do alto
+        ];
+
+        /* ==========================================================================
+           2. SISTEMA DE VOZ Y SONIDOS MUSICALES (SIN ARCHIVOS EXTERNOS)
+           ========================================================================== */
+        let audioCtx = null;
+        let currentUtterance = null; // Evita que el navegador corte la voz antes de terminar
+        let speechTimer = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        // Sintetizador de voz amigable en español con protección contra cortes y pausa real
+        function speak(text, saveAsInstruction = false, onComplete = null, pauseAfterMs = 1400) {
+            if (saveAsInstruction) {
+                state.currentInstruction = text;
+            }
+
+            // Si estamos celebrando un acierto, no permitir que voces secundarias interrumpan la felicitación
+            if (state.isTransitioning && typeof onComplete !== 'function') {
+                return;
+            }
+
+            if (speechTimer) {
+                clearTimeout(speechTimer);
+                speechTimer = null;
+            }
+
+            let finished = false;
+            const finishOnce = () => {
+                if (finished) return;
+                finished = true;
+                currentUtterance = null;
+                if (typeof onComplete === 'function') {
+                    // Pausa clara y cómoda después de terminar de felicitar
+                    speechTimer = setTimeout(onComplete, pauseAfterMs);
+                }
+            };
+
+            if (state.isMuted || !('speechSynthesis' in window)) {
+                if (typeof onComplete === 'function') {
+                    speechTimer = setTimeout(finishOnce, 1800);
+                }
+                return;
+            }
+
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            currentUtterance = utterance;
+            utterance.lang = 'es-ES';
+            utterance.rate = 0.90;  // Ritmo claro y pausado para niños
+            utterance.pitch = 1.25; // Tono cálido y alegre
+
+            // Intentar seleccionar una voz en español de buena calidad
+            const voices = window.speechSynthesis.getVoices();
+            const esVoice = voices.find(v => v.lang.includes('es-419') || v.lang.includes('es-ES'));
+            if (esVoice) utterance.voice = esVoice;
+
+            if (typeof onComplete === 'function') {
+                const startTime = Date.now();
+                // Tiempo mínimo estimado que tarda en pronunciarse la frase completa
+                const minSpeakDuration = Math.max(2200, text.length * 75);
+                const maxFallbackMs = Math.max(4200, text.length * 115 + 1500);
+
+                const fallbackTimer = setTimeout(finishOnce, maxFallbackMs);
+
+                const handleEnd = () => {
+                    clearTimeout(fallbackTimer);
+                    const elapsed = Date.now() - startTime;
+                    const remainingMin = Math.max(0, minSpeakDuration - elapsed);
+                    // Garantiza que nunca pase antes de que termine de decir la frase + pausa
+                    setTimeout(finishOnce, remainingMin);
+                };
+
+                utterance.onend = handleEnd;
+                utterance.onerror = handleEnd;
+            }
+
+            window.speechSynthesis.speak(utterance);
+        }
+
+        let lastHoverTime = 0;
+        function hoverSpeak(text) {
+            if (state.isTransitioning) return;
+            const now = Date.now();
+            if (now - lastHoverTime > 1800) {
+                lastHoverTime = now;
+                speak(text, false);
+            }
+        }
+
+        function repeatInstruction() {
+            if (state.isTransitioning) return;
+            initAudio();
+            playPopSound(440);
+            speak(state.currentInstruction, false);
+        }
+
+        function toggleMute() {
+            state.isMuted = !state.isMuted;
+            const btn = document.getElementById('btn-mute');
+            btn.textContent = state.isMuted ? '🔇' : '🔊';
+            if (state.isMuted && 'speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+            } else {
+                initAudio();
+                playPopSound(520);
+            }
+        }
+
+        // Efectos de sonido musicales con Web Audio API
+        function playTone(freq, duration = 0.3, type = 'sine', delay = 0) {
+            if (state.isMuted) return;
+            initAudio();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime + delay);
+
+            gain.gain.setValueAtTime(0.01, audioCtx.currentTime + delay);
+            gain.gain.exponentialRampToValueAtTime(0.25, audioCtx.currentTime + delay + 0.04);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + delay + duration);
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            osc.start(audioCtx.currentTime + delay);
+            osc.stop(audioCtx.currentTime + delay + duration);
+        }
+
+        function playPopSound(freq = 500) {
+            playTone(freq, 0.15, 'triangle', 0);
+        }
+
+        function playSuccessFanfare() {
+            // Acorde mayor alegre ascendente (Do - Mi - Sol - Do alta)
+            playTone(523.25, 0.25, 'triangle', 0);
+            playTone(659.25, 0.25, 'triangle', 0.12);
+            playTone(783.99, 0.25, 'triangle', 0.24);
+            playTone(1046.50, 0.45, 'triangle', 0.36);
+        }
+
+        function playGentleTryAgain() {
+            // Sonido suave y amigable (no agresivo)
+            playTone(320, 0.2, 'sine', 0);
+            playTone(280, 0.3, 'sine', 0.15);
+        }
+
+        /* ==========================================================================
+           3. NAVEGACIÓN Y SISTEMA DE RECOMPENSAS
+           ========================================================================== */
+        function goHome() {
+            initAudio();
+            playPopSound(400);
+            window.speechSynthesis.cancel();
+            state.currentScreen = 'home';
+            state.simonIsPlaying = false;
+            state.isTransitioning = false;
+            state.pendingNextRound = null;
+
+            document.querySelectorAll('main > section').forEach(sec => sec.classList.add('hidden'));
+            document.getElementById('screen-home').classList.remove('hidden');
+            document.getElementById('btn-home').classList.add('hidden');
+            document.getElementById('home-badge').classList.remove('hidden');
+
+            speak('¡Elige un juego divertido!', true);
+        }
+
+        function startGame(mode) {
+            initAudio();
+            playPopSound(600);
+            state.currentScreen = mode;
+            state.isTransitioning = false;
+            state.pendingNextRound = null;
+
+            document.querySelectorAll('main > section').forEach(sec => sec.classList.add('hidden'));
+            document.getElementById(`screen-${mode}`).classList.remove('hidden');
+            document.getElementById('btn-home').classList.remove('hidden');
+            document.getElementById('home-badge').classList.add('hidden');
+
+            if (mode === 'letters') initLettersRound();
+            if (mode === 'numbers') initNumbersRound();
+            if (mode === 'shapes') initShapesRound();
+            if (mode === 'memory') initMemoryGame();
+        }
+
+        // Coordina la felicitación por voz, el desbloqueo de stickers y el paso a la siguiente ronda
+        function celebrateAndAdvance(praiseText, nextRoundCallback) {
+            state.isTransitioning = true;
+            state.stars += 1;
+            document.getElementById('star-count').textContent = state.stars;
+            playSuccessFanfare();
+            launchConfetti();
+
+            const newSticker = STICKERS.find(s => s.starsNeeded === state.stars && !state.unlockedStickers.includes(s.id));
+            if (newSticker) {
+                state.unlockedStickers.push(newSticker.id);
+                document.getElementById('sticker-badge').textContent = `${state.unlockedStickers.length}/${STICKERS.length}`;
+            }
+
+            const proceed = () => {
+                state.isTransitioning = false;
+                if (typeof nextRoundCallback === 'function') {
+                    nextRoundCallback();
+                }
+            };
+
+            // Primero termina de decir la felicitación completa
+            speak(praiseText, false, () => {
+                if (newSticker) {
+                    // Si ganó un sticker nuevo, espera a que lo vea y lo cierre antes de la siguiente pregunta
+                    state.pendingNextRound = proceed;
+                    showUnlockModal(newSticker);
+                } else {
+                    proceed();
+                }
+            });
+        }
+
+        function openStickerChest() {
+            initAudio();
+            playPopSound(550);
+            const grid = document.getElementById('stickers-grid');
+            grid.innerHTML = '';
+
+            STICKERS.forEach(sticker => {
+                const isUnlocked = state.unlockedStickers.includes(sticker.id);
+                const card = document.createElement('div');
+                card.className = `p-4 rounded-3xl border-4 flex flex-col items-center justify-center ${
+                    isUnlocked 
+                    ? 'bg-white border-amber-400 shadow-md cursor-pointer hover:scale-105 transition-transform' 
+                    : 'bg-gray-200/80 border-gray-300 opacity-70'
+                }`;
+
+                if (isUnlocked) {
+                    card.onclick = () => {
+                        playPopSound(700);
+                        speak(sticker.name, false);
+                    };
+                    card.innerHTML = `
+                        <span class="text-5xl sm:text-6xl mb-1">${sticker.emoji}</span>
+                        <span class="text-sm sm:text-base font-bold text-gray-800">${sticker.name}</span>
+                    `;
+                } else {
+                    card.innerHTML = `
+                        <span class="text-4xl sm:text-5xl mb-1">🔒</span>
+                        <span class="text-xs sm:text-sm font-bold text-gray-500">${sticker.starsNeeded} ⭐</span>
+                    `;
+                }
+                grid.appendChild(card);
+            });
+
+            document.getElementById('modal-stickers').classList.remove('hidden');
+            speak('Este es tu cofre de stickers mágicos.', false);
+        }
+
+        function closeStickerChest() {
+            playPopSound(400);
+            document.getElementById('modal-stickers').classList.add('hidden');
+        }
+
+        function showUnlockModal(sticker) {
+            document.getElementById('unlocked-emoji').textContent = sticker.emoji;
+            document.getElementById('unlocked-name').textContent = sticker.name;
+            document.getElementById('modal-unlock').classList.remove('hidden');
+            launchConfetti();
+            // Permitir temporalmente la voz para anunciar el premio ganado
+            const wasTransitioning = state.isTransitioning;
+            state.isTransitioning = false;
+            speak(`¡Felicidades! Ganaste el sticker: ${sticker.name}`, false);
+            state.isTransitioning = wasTransitioning;
+        }
+
+        function closeUnlockModal() {
+            playPopSound(500);
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+            }
+            document.getElementById('modal-unlock').classList.add('hidden');
+            if (typeof state.pendingNextRound === 'function') {
+                const next = state.pendingNextRound;
+                state.pendingNextRound = null;
+                next();
+            }
+        }
+
+        /* ==========================================================================
+           4. JUEGO 1: LETRAS Y PALABRAS
+           ========================================================================== */
+        function initLettersRound() {
+            state.isTransitioning = false;
+            const target = ALPHABET_DATA[Math.floor(Math.random() * ALPHABET_DATA.length)];
+            state.letterTarget = target;
+
+            document.getElementById('showcase-char').textContent = target.char;
+            document.getElementById('showcase-emoji').textContent = target.emoji;
+            document.getElementById('showcase-word').textContent = target.word;
+
+            const promptText = `¿Dónde está la letra ${target.char}, de ${target.word}?`;
+            document.getElementById('letters-prompt').textContent = `Busca la letra ${target.char}`;
+
+            // Elegir 2 distractores diferentes
+            const distractors = ALPHABET_DATA.filter(item => item.char !== target.char)
+                .sort(() => Math.random() - 0.5)
+                .slice(0, 2);
+
+            const options = [target, ...distractors].sort(() => Math.random() - 0.5);
+            const colors = ['bg-sky-400', 'bg-amber-400', 'bg-emerald-400'];
+
+            const container = document.getElementById('letters-options');
+            container.innerHTML = '';
+
+            options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = `btn-cartoon ${colors[idx]} text-white py-6 sm:py-8 rounded-[2rem] text-5xl sm:text-7xl font-extrabold animate-pop`;
+                btn.textContent = opt.char;
+                btn.onclick = () => checkLetterAnswer(opt, btn);
+                container.appendChild(btn);
+            });
+
+            speak(promptText, true);
+        }
+
+        function pronounceCurrentLetter() {
+            if (!state.letterTarget) return;
+            playPopSound(550);
+            const el = document.getElementById('letter-showcase');
+            el.classList.remove('animate-wiggle');
+            void el.offsetWidth;
+            el.classList.add('animate-wiggle');
+            speak(`${state.letterTarget.char}, de ${state.letterTarget.word}`, false);
+        }
+
+        function checkLetterAnswer(selected, btnElement) {
+            if (state.isTransitioning) return;
+
+            if (selected.char === state.letterTarget.char) {
+                btnElement.classList.add('ring-8', 'ring-yellow-300');
+                celebrateAndAdvance(
+                    `¡Muy bien! Esa es la letra ${selected.char}, de ${selected.word}`,
+                    () => {
+                        if (state.currentScreen === 'letters') initLettersRound();
+                    }
+                );
+            } else {
+                playGentleTryAgain();
+                btnElement.classList.remove('animate-wiggle');
+                void btnElement.offsetWidth;
+                btnElement.classList.add('animate-wiggle');
+                speak(`Esa es la ${selected.char}. ¡Intenta buscar la ${state.letterTarget.char}!`, false);
+            }
+        }
+
+        /* ==========================================================================
+           5. JUEGO 2: NÚMEROS Y CONTEO (1 al 10)
+           ========================================================================== */
+        function initNumbersRound() {
+            state.isTransitioning = false;
+            // Para niños de 2-5 años, números del 1 al 8 (o hasta 10) son ideales
+            const count = Math.floor(Math.random() * 8) + 1;
+            const itemType = COUNTING_ITEMS[Math.floor(Math.random() * COUNTING_ITEMS.length)];
+            state.numberTarget = count;
+            state.countedSet.clear();
+
+            const itemLabel = count === 1 ? itemType.singular : itemType.plural;
+            document.getElementById('numbers-prompt').textContent = `Toca para contar (${itemType.emoji})`;
+
+            const area = document.getElementById('counting-area');
+            area.innerHTML = '';
+
+            for (let i = 0; i < count; i++) {
+                const itemBtn = document.createElement('button');
+                itemBtn.className = 'text-6xl sm:text-7xl p-2 rounded-3xl transition-transform hover:scale-110 active:scale-95 relative animate-pop';
+                itemBtn.style.animationDelay = `${i * 0.06}s`;
+                itemBtn.innerHTML = `<span>${itemType.emoji}</span>`;
+                itemBtn.onclick = () => handleCountTap(i, itemBtn);
+                area.appendChild(itemBtn);
+            }
+
+            // Generar 3 opciones numéricas
+            const optionsSet = new Set([count]);
+            while (optionsSet.size < 3) {
+                const randNum = Math.floor(Math.random() * 9) + 1;
+                optionsSet.add(randNum);
+            }
+
+            const options = Array.from(optionsSet).sort(() => Math.random() - 0.5);
+            const colors = ['bg-pink-500', 'bg-indigo-500', 'bg-teal-500'];
+            const optContainer = document.getElementById('numbers-options');
+            optContainer.innerHTML = '';
+
+            options.forEach((num, idx) => {
+                const btn = document.createElement('button');
+                btn.className = `btn-cartoon ${colors[idx]} text-white py-5 sm:py-7 rounded-[2rem] text-5xl sm:text-6xl font-extrabold`;
+                btn.textContent = num;
+                btn.onclick = () => checkNumberAnswer(num, btn);
+                optContainer.appendChild(btn);
+            });
+
+            speak(`Cuenta tocando cada ${itemType.singular} y elige el número correcto.`, true);
+        }
+
+        function handleCountTap(index, btnElement) {
+            if (!state.countedSet.has(index)) {
+                state.countedSet.add(index);
+                const currentNum = state.countedSet.size;
+                // Nota musical ascendente según el número contado
+                playTone(260 + currentNum * 45, 0.25, 'sine', 0);
+
+                // Añadir etiqueta visual del número contado encima del emoji
+                const badge = document.createElement('span');
+                badge.className = 'absolute -top-2 -right-2 bg-amber-400 text-amber-950 text-xl sm:text-2xl font-extrabold w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center border-2 border-white shadow';
+                badge.textContent = currentNum;
+                btnElement.appendChild(badge);
+                btnElement.classList.add('scale-110');
+
+                speak(`${currentNum}`, false);
+            } else {
+                playPopSound(500);
+            }
+        }
+
+        function checkNumberAnswer(selectedNum, btnElement) {
+            if (state.isTransitioning) return;
+
+            if (selectedNum === state.numberTarget) {
+                btnElement.classList.add('ring-8', 'ring-yellow-300');
+                celebrateAndAdvance(
+                    `¡Excelente! Hay ${selectedNum}.`,
+                    () => {
+                        if (state.currentScreen === 'numbers') initNumbersRound();
+                    }
+                );
+            } else {
+                playGentleTryAgain();
+                btnElement.classList.remove('animate-wiggle');
+                void btnElement.offsetWidth;
+                btnElement.classList.add('animate-wiggle');
+                speak(`Ese es el ${selectedNum}. ¡Cuenta de nuevo!`, false);
+            }
+        }
+
+        /* ==========================================================================
+           6. JUEGO 3: COLORES Y FORMAS (CON FIGURAS SVG CON CARITAS)
+           ========================================================================== */
+        function createCuteShapeSVG(shapeType, colorHex) {
+            // Caritas kawaii dentro de cada figura geométrica
+            const faceSVG = `
+                <circle cx="38" cy="48" r="4" fill="#1F2937"/>
+                <circle cx="62" cy="48" r="4" fill="#1F2937"/>
+                <circle cx="39.5" cy="46.5" r="1.5" fill="#FFFFFF"/>
+                <circle cx="63.5" cy="46.5" r="1.5" fill="#FFFFFF"/>
+                <path d="M 43 58 Q 50 65 57 58" stroke="#1F2937" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+                <ellipse cx="32" cy="54" rx="4" ry="2.5" fill="#F472B6" opacity="0.6"/>
+                <ellipse cx="68" cy="54" rx="4" ry="2.5" fill="#F472B6" opacity="0.6"/>
+            `;
+
+            let shapeElement = '';
+            if (shapeType === 'circle') {
+                shapeElement = `<circle cx="50" cy="50" r="42" fill="${colorHex}" stroke="#FFFFFF" stroke-width="5"/>`;
+            } else if (shapeType === 'square') {
+                shapeElement = `<rect x="12" y="12" width="76" height="76" rx="16" fill="${colorHex}" stroke="#FFFFFF" stroke-width="5"/>`;
+            } else if (shapeType === 'triangle') {
+                shapeElement = `<polygon points="50,8 92,86 8,86" stroke-linejoin="round" fill="${colorHex}" stroke="#FFFFFF" stroke-width="5"/>`;
+            } else if (shapeType === 'star') {
+                shapeElement = `<polygon points="50,6 63,34 94,38 71,59 77,90 50,75 23,90 29,59 6,38 37,34" stroke-linejoin="round" fill="${colorHex}" stroke="#FFFFFF" stroke-width="4"/>`;
+            }
+
+            return `<svg viewBox="0 0 100 100" class="w-28 h-28 sm:w-36 sm:h-36 drop-shadow-md">${shapeElement}${faceSVG}</svg>`;
+        }
+
+        function initShapesRound() {
+            state.isTransitioning = false;
+            // Generar 4 combinaciones únicas de forma + color
+            const combinations = [];
+            while (combinations.length < 4) {
+                const shape = SHAPES_DATA[Math.floor(Math.random() * SHAPES_DATA.length)];
+                const color = COLORS_DATA[Math.floor(Math.random() * COLORS_DATA.length)];
+                const key = `${shape.id}-${color.id}`;
+                if (!combinations.some(c => c.key === key)) {
+                    combinations.push({ key, shape, color });
+                }
+            }
+
+            const target = combinations[Math.floor(Math.random() * combinations.length)];
+            state.shapeTarget = target;
+
+            const promptText = `Toca ${target.shape.name} ${target.color.name}`;
+            document.getElementById('shapes-prompt').textContent = `¡Busca ${target.shape.name} ${target.color.name}!`;
+
+            const grid = document.getElementById('shapes-grid');
+            grid.innerHTML = '';
+
+            combinations.forEach(item => {
+                const btn = document.createElement('button');
+                btn.className = 'btn-cartoon bg-white/95 p-5 sm:p-6 rounded-[2.5rem] flex items-center justify-center animate-pop';
+                btn.innerHTML = createCuteShapeSVG(item.shape.svgType, item.color.hex);
+                btn.onclick = () => checkShapeAnswer(item, btn);
+                grid.appendChild(btn);
+            });
+
+            speak(promptText, true);
+        }
+
+        function checkShapeAnswer(selected, btnElement) {
+            if (state.isTransitioning) return;
+
+            if (selected.key === state.shapeTarget.key) {
+                btnElement.classList.add('ring-8', 'ring-yellow-400', 'bg-yellow-50');
+                celebrateAndAdvance(
+                    `¡Súper! Encontraste ${selected.shape.name} ${selected.color.name}.`,
+                    () => {
+                        if (state.currentScreen === 'shapes') initShapesRound();
+                    }
+                );
+            } else {
+                playGentleTryAgain();
+                btnElement.classList.remove('animate-wiggle');
+                void btnElement.offsetWidth;
+                btnElement.classList.add('animate-wiggle');
+                speak(`Ese es ${selected.shape.name} ${selected.color.name}. ¡Sigue buscando!`, false);
+            }
+        }
+
+        /* ==========================================================================
+           7. JUEGO 4: MEMORIA MUSICAL DE ANIMALES (SIMÓN DICE)
+           ========================================================================== */
+        function initMemoryGame() {
+            state.isTransitioning = false;
+            state.simonSequence = [];
+            state.simonLevel = 1;
+            nextSimonRound();
+        }
+
+        function nextSimonRound() {
+            state.simonUserStep = 0;
+            state.simonIsPlaying = true;
+            // Añadir un nuevo animal aleatorio a la secuencia
+            const nextAnimalIndex = Math.floor(Math.random() * SIMON_ANIMALS.length);
+            state.simonSequence.push(nextAnimalIndex);
+
+            document.getElementById('memory-prompt').textContent = '👀 Mira y escucha...';
+            speak('Mira y escucha con atención.', true, () => {
+                if (state.currentScreen === 'memory') {
+                    playSimonSequence();
+                }
+            }, 600);
+        }
+
+        function playSimonSequence() {
+            let i = 0;
+            const interval = setInterval(() => {
+                if (state.currentScreen !== 'memory') {
+                    clearInterval(interval);
+                    return;
+                }
+                const animalIdx = state.simonSequence[i];
+                activateAnimalButton(animalIdx);
+                i++;
+
+                if (i >= state.simonSequence.length) {
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        if (state.currentScreen === 'memory') {
+                            state.simonIsPlaying = false;
+                            document.getElementById('memory-prompt').textContent = '👇 ¡Ahora te toca a ti!';
+                            speak('¡Tu turno! Toca los animales en el mismo orden.', true);
+                        }
+                    }, 700);
+                }
+            }, 950);
+        }
+
+        function activateAnimalButton(index) {
+            const btn = document.getElementById(`simon-${index}`);
+            const animal = SIMON_ANIMALS[index];
+            if (!btn) return;
+
+            btn.classList.remove('simon-lit');
+            void btn.offsetWidth;
+            btn.classList.add('simon-lit');
+
+            playTone(animal.freq, 0.4, 'triangle', 0);
+            speak(animal.soundText, false);
+        }
+
+        function handleSimonPress(index) {
+            if (state.simonIsPlaying || state.isTransitioning) return;
+
+            activateAnimalButton(index);
+            const expectedIndex = state.simonSequence[state.simonUserStep];
+
+            if (index === expectedIndex) {
+                state.simonUserStep++;
+                // Si completó toda la secuencia actual
+                if (state.simonUserStep === state.simonSequence.length) {
+                    state.simonIsPlaying = true;
+                    state.isTransitioning = true;
+                    setTimeout(() => {
+                        document.getElementById('memory-prompt').textContent = '🎉 ¡Excelente memoria!';
+                        celebrateAndAdvance(
+                            '¡Lo lograste! ¡Qué buena memoria!',
+                            () => {
+                                if (state.currentScreen === 'memory') {
+                                    // Limitar secuencia máxima a 4 para niños pequeños y reiniciar ciclo
+                                    if (state.simonSequence.length >= 4) {
+                                        state.simonSequence = [];
+                                    }
+                                    nextSimonRound();
+                                }
+                            }
+                        );
+                    }, 550);
+                }
+            } else {
+                // Error amigable: repite la misma secuencia para que lo vuelva a intentar sin frustración
+                state.simonIsPlaying = true;
+                playGentleTryAgain();
+                document.getElementById('memory-prompt').textContent = '🙈 ¡Escuchemos otra vez!';
+                speak('¡Ups! Escuchemos otra vez para intentarlo de nuevo.', false);
+                state.simonUserStep = 0;
+                setTimeout(() => {
+                    if (state.currentScreen === 'memory') playSimonSequence();
+                }, 2000);
+            }
+        }
+
+        /* ==========================================================================
+           8. ANIMACIÓN DE CONFETI AL GANAR
+           ========================================================================== */
+        const canvas = document.getElementById('confetti-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function launchConfetti() {
+            const colors = ['#EF4444', '#FACC15', '#22C55E', '#3B82F6', '#EC4899', '#A855F7'];
+            for (let i = 0; i < 75; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: -20 - Math.random() * 100,
+                    size: Math.random() * 10 + 6,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    speedY: Math.random() * 4 + 3,
+                    speedX: (Math.random() - 0.5) * 4,
+                    rotation: Math.random() * 360,
+                    rotSpeed: (Math.random() - 0.5) * 10
+                });
+            }
+        }
+
+        function updateConfetti() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.y += p.speedY;
+                p.x += p.speedX;
+                p.rotation += p.rotSpeed;
+
+                ctx.save();
+                ctx.translate(p.x, p.y);
+                ctx.rotate((p.rotation * Math.PI) / 180);
+                ctx.fillStyle = p.color;
+                ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
+                ctx.restore();
+
+                if (p.y > canvas.height + 30) {
+                    particles.splice(i, 1);
+                }
+            }
+            requestAnimationFrame(updateConfetti);
+        }
+
+        // Inicialización al cargar la página
+        window.onload = function () {
+            updateConfetti();
+            // Cargar voces del navegador
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.getVoices();
+            }
+        };
+    </script>
+</body>
+</html>
